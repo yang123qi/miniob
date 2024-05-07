@@ -27,3 +27,5 @@ GPATH
 GTAGS
 docs/book
 #*#
+src/observer/sql/.vs/
+/.vs
