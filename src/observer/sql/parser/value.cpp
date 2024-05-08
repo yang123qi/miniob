@@ -63,6 +63,10 @@ void Value::set_data(char *data, int length)
       num_value_.bool_value_ = *(int *)data != 0;
       length_                = length;
     } break;
+    case DATES: {
+    num_value_.date_value_ = *(Date *)data;
+    length_ = length;
+  } break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
     } break;
@@ -98,6 +102,11 @@ void Value::set_string(const char *s, int len /*= 0*/)
   }
   length_ = str_value_.length();
 }
+void Value::set_date(Date date) {
+  attr_type_ = DATES;
+  num_value_.date_value_ = date;
+  length_ = sizeof(date);
+}
 
 void Value::set_value(const Value &value)
 {
@@ -114,6 +123,9 @@ void Value::set_value(const Value &value)
     case BOOLEANS: {
       set_boolean(value.get_boolean());
     } break;
+    case DATES: {
+    set_date(value.get_date());
+  } break;
     case UNDEFINED: {
       ASSERT(false, "got an invalid value type");
     } break;
@@ -145,6 +157,9 @@ std::string Value::to_string() const
     case BOOLEANS: {
       os << num_value_.bool_value_;
     } break;
+    case DATES: {
+    os << Date::to_string(num_value_.date_value_);
+  } break;
     case CHARS: {
       os << str_value_;
     } break;
@@ -174,6 +189,9 @@ int Value::compare(const Value &other) const
       case BOOLEANS: {
         return common::compare_int((void *)&this->num_value_.bool_value_, (void *)&other.num_value_.bool_value_);
       }
+      case DATES: {
+      return Date::compare_date(&num_value_.date_value_, &other.num_value_.date_value_);
+    } break;
       default: {
         LOG_WARN("unsupported type: %d", this->attr_type_);
       }
@@ -284,4 +302,29 @@ bool Value::get_boolean() const
     }
   }
   return false;
+}
+bool Value::convert(AttrType from, AttrType to, Value &value) {
+  if (from == to) {
+    return true;
+  }
+  if (from == CHARS) {
+    if (to == DATES) {
+      Date date = value.get_date();
+      if (date == INVALID_DATE)
+        return false;
+      value.set_date(date);
+      return true;
+    } 
+  }
+  
+  
+  return false;
+}
+
+Date Value::get_date() const {
+  switch (attr_type()) {
+  case DATES: return num_value_.date_value_;
+  case CHARS: return Date(str_value_);
+  default: return INVALID_DATE;
+  }
 }
